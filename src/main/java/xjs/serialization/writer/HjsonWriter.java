@@ -1,6 +1,7 @@
 package xjs.serialization.writer;
 
 import xjs.core.CommentType;
+import xjs.core.JsonContainer;
 import xjs.core.JsonObject;
 import xjs.core.JsonValue;
 import xjs.core.JsonReference;
@@ -38,7 +39,7 @@ public class HjsonWriter extends XjsWriter {
 
         switch (value.getType()) {
             case OBJECT:
-                this.open(condensed, '{');
+                this.open(value.asObject(), condensed, '{');
                 for (final JsonObject.Member member : value.asObject()) {
                     this.writeNextMember(previous, member, condensed, level);
                     previous = member.getOnly();
@@ -47,7 +48,7 @@ public class HjsonWriter extends XjsWriter {
                 this.close(value.asObject(), condensed, level, '}');
                 break;
             case ARRAY:
-                this.open(condensed, '[');
+                this.open(value.asArray(), condensed, '[');
                 for (final JsonValue v : value.asArray().visitAll()) {
                     this.writeNextElement(previous, v, condensed, level);
                     previous = v;
@@ -64,6 +65,11 @@ public class HjsonWriter extends XjsWriter {
             default:
                 this.tw.write(value.toString());
         }
+    }
+
+    @Override
+    protected boolean shouldSeparateOpener(final JsonContainer c, final boolean condensed) {
+        return c.size() > 0 && c.getReference(0).getOnly().getLinesAbove() == 0;
     }
 
     @Override
@@ -193,6 +199,23 @@ public class HjsonWriter extends XjsWriter {
         if (this.allowCondense && value.isContainer()) {
             for (final JsonReference reference : value.asContainer().references()) {
                 if (reference.getOnly().getLinesAbove() == 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    protected boolean isOpenRootCondensed(final JsonValue value) {
+        if (this.allowCondense && value.isContainer()) {
+            final JsonContainer c = value.asContainer();
+            if (c.size() < 2) {
+                return false;
+            }
+            // Ignore the first value in an open root
+            for (int i = 1; i < c.size(); i++) {
+                if (c.getReference(i).getOnly().getLinesAbove() == 0) {
                     return true;
                 }
             }

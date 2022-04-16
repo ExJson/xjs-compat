@@ -14,7 +14,7 @@ public final class XjsCompat {
 
     // Loads the provided serializers into the JsonSerializationContext.
     static {
-        JsonSerializationContext.addParser("hjson", file -> new HjsonParser(file).parse());
-        JsonSerializationContext.addWriter("hjson", (w, v, o) -> new HjsonWriter(w, o).write(v));
+        JsonContext.addParser("hjson", file -> new HjsonParser(file).parse());
+        JsonContext.addWriter("hjson", (w, v, o) -> new HjsonWriter(w, o).write(v));
     }
 }

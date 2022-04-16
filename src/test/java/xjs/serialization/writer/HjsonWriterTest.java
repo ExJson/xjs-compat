@@ -2,7 +2,6 @@ package xjs.serialization.writer;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import xjs.core.CommentStyle;
 import xjs.core.CommentType;
@@ -13,7 +12,7 @@ import xjs.core.JsonObject;
 import xjs.core.JsonString;
 import xjs.core.JsonValue;
 import xjs.core.StringType;
-import xjs.serialization.JsonSerializationContext;
+import xjs.serialization.JsonContext;
 import xjs.serialization.parser.XjsParser;
 
 import java.io.IOException;
@@ -25,12 +24,12 @@ public final class HjsonWriterTest {
 
     @BeforeAll
     static void setup() {
-        JsonSerializationContext.setEol("\n");
+        JsonContext.setEol("\n");
     }
 
     @AfterAll
     static void teardown() {
-        JsonSerializationContext.setEol(System.getProperty("line.separator"));
+        JsonContext.setEol(System.getProperty("line.separator"));
     }
 
     @Test
@@ -204,7 +203,6 @@ public final class HjsonWriterTest {
     }
 
     @Test
-    @Disabled("Pending upstream changes")
     public void write_withMinAndMaxSpacing_overridesConfiguredSpacing_ignoringCondensed() throws IOException {
         final JsonWriterOptions options = new JsonWriterOptions().setMinSpacing(2).setMaxSpacing(2);
         final String input = """
@@ -221,8 +219,7 @@ public final class HjsonWriterTest {
             
             5: {
               6: [ 7, 8, 9 ]
-            }
-            """;
+            }""";
         final JsonObject object = new XjsParser(input).parse().asObject();
         assertEquals(expected, write(object, options));
     }
@@ -239,7 +236,6 @@ public final class HjsonWriterTest {
     }
 
     @Test
-    @Disabled("pending upstream bugs")
     public void parse_thenRewrite_preservesComplexFormatting() throws IOException {
         final String expected = """
             

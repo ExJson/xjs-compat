@@ -131,7 +131,7 @@ public final class HjsonParserTest extends CommonParserTest {
                 2
               '''
             """;
-        assertEquals("0\n 1\n  2", this.parse(text).asObject().expect("multi").asString());
+        assertEquals("0\n 1\n  2", this.parse(text).asObject().getAsserted("multi").asString());
     }
 
     @ParameterizedTest
