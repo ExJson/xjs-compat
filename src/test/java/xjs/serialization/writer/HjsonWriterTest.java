@@ -7,13 +7,14 @@ import xjs.core.CommentStyle;
 import xjs.core.CommentType;
 import xjs.core.Json;
 import xjs.core.JsonArray;
+import xjs.core.JsonCopy;
 import xjs.core.JsonContainer;
 import xjs.core.JsonObject;
 import xjs.core.JsonString;
 import xjs.core.JsonValue;
 import xjs.core.StringType;
 import xjs.serialization.JsonContext;
-import xjs.serialization.parser.XjsParser;
+import xjs.serialization.parser.HjsonParser;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -220,7 +221,7 @@ public final class HjsonWriterTest {
             5: {
               6: [ 7, 8, 9 ]
             }""";
-        final JsonObject object = new XjsParser(input).parse().asObject();
+        final JsonObject object = new HjsonParser(input).parse().asObject();
         assertEquals(expected, write(object, options));
     }
 
@@ -280,7 +281,7 @@ public final class HjsonWriterTest {
             c: { '': '' }
             d: [ '', '', '' ]
             """;
-        assertEquals(expected, write(new XjsParser(expected).parse()));
+        assertEquals(expected, write(new HjsonParser(expected).parse()));
     }
 
     @Test
@@ -356,6 +357,52 @@ public final class HjsonWriterTest {
         v.setComment(CommentType.INTERIOR, CommentStyle.MULTILINE_DOC, "Interior");
 
         assertEquals("[\n  /** Interior */\n]", write(v));
+    }
+
+    @Test
+    public void write_withSmartSpacing_separatesContainers() throws IOException {
+        final String input = """
+            a: 1
+            b: 2
+            c: {
+              c1: '3a'
+              c2: '3b'
+            }
+            d: [
+              '4a'
+              {}
+              '4b'
+            ]
+            e: 5
+            f: 6
+            // header
+            g: 7
+            h: 8""";
+        final String expected = """
+            a: 1
+            b: 2
+            
+            c: {
+              c1: 3a
+              c2: 3b
+            }
+            
+            d: [
+              4a
+              {}
+              4b
+            ]
+            
+            e: 5
+            f: 6
+            
+            // header
+            g: 7
+            
+            h: 8""";
+
+        final JsonValue value = new HjsonParser(input).parse().copy(JsonCopy.UNFORMATTED | JsonCopy.COMMENTS);
+        assertEquals(expected, write(value, new JsonWriterOptions().setSmartSpacing(true)));
     }
 
     private static String write(final JsonValue value) {
