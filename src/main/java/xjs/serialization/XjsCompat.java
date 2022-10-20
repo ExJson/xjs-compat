@@ -2,7 +2,11 @@ package xjs.serialization;
 
 import org.jetbrains.annotations.ApiStatus;
 import xjs.serialization.parser.HjsonParser;
+import xjs.serialization.parser.ParsingFunction;
+import xjs.serialization.parser.UbjsonParser;
 import xjs.serialization.writer.HjsonWriter;
+import xjs.serialization.writer.UbjsonWriter;
+import xjs.serialization.writer.WritingFunction;
 
 /**
  * Core utilities used by xjs-compat. For internal use only.
@@ -14,7 +18,9 @@ public final class XjsCompat {
 
     // Loads the provided serializers into the JsonSerializationContext.
     static {
-        JsonContext.addParser("hjson", file -> new HjsonParser(file).parse());
-        JsonContext.addWriter("hjson", (w, v, o) -> new HjsonWriter(w, o).write(v));
+        JsonContext.addParser("hjson", ParsingFunction.fromParser(HjsonParser::new));
+        JsonContext.addWriter("hjson", WritingFunction.fromWriter(HjsonWriter::new));
+        JsonContext.addParser("ubjson", ParsingFunction.fromParser(UbjsonParser::new));
+        JsonContext.addWriter("ubjson", WritingFunction.fromWriter((f, o) -> new UbjsonWriter(f)));
     }
 }

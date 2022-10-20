@@ -24,6 +24,10 @@ public class HjsonWriter extends XjsWriter {
         super(writer, format);
     }
 
+    public HjsonWriter(final File file, final JsonWriterOptions options) throws IOException {
+        super(file, options);
+    }
+
     public HjsonWriter(final Writer writer, final JsonWriterOptions options) {
         super(writer, options);
     }
