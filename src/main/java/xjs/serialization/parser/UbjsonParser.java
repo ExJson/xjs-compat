@@ -103,90 +103,12 @@ public class UbjsonParser implements ValueParser {
         return new String(bytes, StandardCharsets.UTF_8);
     }
 
-    protected JsonArray readOptimizedArrayInt8(final int size) throws IOException {
-        final List<JsonReference> array = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            array.add(new JsonReference(Json.value(this.read())));
-        }
-        return new JsonArray(array);
-    }
-
-    protected JsonArray readOptimizedArrayUInt8(final int size) throws IOException {
-        final List<JsonReference> array = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            array.add(new JsonReference(Json.value(this.readUInt8())));
-        }
-        return new JsonArray(array);
-    }
-
-    protected JsonArray readOptimizedArrayInt16(final int size) throws IOException {
-        final List<JsonReference> array = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            array.add(new JsonReference(Json.value(this.readInt16())));
-        }
-        return new JsonArray(array);
-    }
-
-    protected JsonArray readOptimizedArrayInt32(final int size) throws IOException {
-        final List<JsonReference> array = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            array.add(new JsonReference(Json.value(this.readInt32())));
-        }
-        return new JsonArray(array);
-    }
-
-    protected JsonArray readOptimizedArrayInt64(final int size) throws IOException {
-        final List<JsonReference> array = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            array.add(new JsonReference(Json.value(this.readInt64())));
-        }
-        return new JsonArray(array);
-    }
-
-    protected JsonArray readOptimizedArrayFloat32(final int size) throws IOException {
-        final List<JsonReference> array = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            array.add(new JsonReference(Json.value(this.readFloat32())));
-        }
-        return new JsonArray(array);
-    }
-
-    protected JsonArray readOptimizedArrayFloat64(final int size) throws IOException {
-        final List<JsonReference> array = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            array.add(new JsonReference(Json.value(this.readFloat64())));
-        }
-        return new JsonArray(array);
-    }
-
-    protected JsonArray readOptimizedArrayString(final int size) throws IOException {
-        final List<JsonReference> array = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            array.add(new JsonReference(Json.value(this.readString())));
-        }
-        return new JsonArray(array);
-    }
-
     protected JsonArray readOptimizedArray(final int size, final byte type) throws IOException {
         final List<JsonReference> array = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             array.add(new JsonReference(this.readValue(type)));
         }
         return new JsonArray(array);
-    }
-
-    protected JsonArray fastReadOptimizedArray(final int size, final byte type) throws IOException {
-        switch (type) {
-            case UBMarker.U_INT8: return this.readOptimizedArrayUInt8(size);
-            case UBMarker.INT8: return this.readOptimizedArrayInt8(size);
-            case UBMarker.INT16: return this.readOptimizedArrayInt16(size);
-            case UBMarker.INT32: return this.readOptimizedArrayInt32(size);
-            case UBMarker.INT64: return this.readOptimizedArrayInt64(size);
-            case UBMarker.FLOAT32: return this.readOptimizedArrayFloat32(size);
-            case UBMarker.FLOAT64: return this.readOptimizedArrayFloat64(size);
-            case UBMarker.STRING: return this.readOptimizedArrayString(size);
-            default: return this.readOptimizedArray(size, type);
-        }
     }
 
     protected JsonArray readSizedArray(final int size) throws IOException {
@@ -197,7 +119,7 @@ public class UbjsonParser implements ValueParser {
         return new JsonArray(array);
     }
 
-    protected JsonArray readUnSizedArray(byte type) throws IOException {
+    protected JsonArray readGenericArray(byte type) throws IOException {
         final JsonArray array = new JsonArray();
         while (type != UBMarker.ARRAY_END) {
             array.add(this.readValue(type));
@@ -213,11 +135,11 @@ public class UbjsonParser implements ValueParser {
             if (this.read() != UBMarker.OPTIMIZED_SIZE) {
                 throw new IOException("Missing size marker");
             }
-            return this.fastReadOptimizedArray((int) this.readInt(), type);
+            return this.readOptimizedArray((int) this.readInt(), type);
         } else if (marker == UBMarker.OPTIMIZED_SIZE) {
             return this.readSizedArray((int) this.readInt());
         }
-        return this.readUnSizedArray(marker);
+        return this.readGenericArray(marker);
     }
 
     protected JsonObject readOptimizedObject(final int size, final byte type) throws IOException {
@@ -237,7 +159,7 @@ public class UbjsonParser implements ValueParser {
         return object;
     }
 
-    protected JsonObject readUnSizedObject(byte type) throws IOException {
+    protected JsonObject readGenericObject(byte type) throws IOException {
         final JsonObject object = new JsonObject();
         while (type != UBMarker.OBJ_END) {
             object.add(this.readString(type), this.readValue());
@@ -257,7 +179,7 @@ public class UbjsonParser implements ValueParser {
         } else if (marker == UBMarker.OPTIMIZED_SIZE) {
             return this.readSizedObject((int) this.readInt());
         }
-        return this.readUnSizedObject(marker);
+        return this.readGenericObject(marker);
     }
 
     protected JsonValue readValue() throws IOException {
