@@ -24,7 +24,7 @@ public class UbjsonWriter implements ValueWriter {
     protected final UBTyping typing;
 
     public UbjsonWriter(final File file) throws IOException {
-        this(new FileOutputStream(file), UBTyping.BALANCED);
+        this(new FileOutputStream(file), UBTyping.COMPRESSED);
     }
 
     public UbjsonWriter(final File file, final UBTyping typing) throws IOException {
@@ -310,10 +310,12 @@ public class UbjsonWriter implements ValueWriter {
             this.writeGenericObject(object);
         } else {
             final byte type = this.getCompressionType(object);
-            if (type == 0) {
-                this.writeSizedObject(object);
-            } else {
+            if (type != 0) {
                 this.writeOptimizedObject(object, type);
+            } else if (this.typing == UBTyping.COMPRESSED) {
+                this.writeGenericObject(object);
+            } else {
+                this.writeSizedObject(object);
             }
         }
     }

@@ -3,13 +3,11 @@ package xjs.serialization.writer;
 import org.junit.jupiter.api.Test;
 import xjs.core.Json;
 import xjs.core.JsonLiteral;
-import xjs.core.JsonObject;
 import xjs.core.JsonValue;
 import xjs.serialization.TestUtils;
 import xjs.serialization.util.UBTyping;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.nio.charset.StandardCharsets;
 
 import static xjs.serialization.util.UBMarker.ARRAY_END;
@@ -31,14 +29,8 @@ import static xjs.serialization.util.UBMarker.U_INT8;
 public final class UbjsonWriterTest {
 
     @Test
-    void write_printsTrue() throws Exception {
+    void write_printsTrue() {
         assertWriteEquals(JsonLiteral.jsonTrue(), TRUE);
-        Json.parse(new File("test.xjs")).asObject()
-            .set("array", Json.array(-1, 2, 3, 4))
-            .write(new File("test.ubjson"));
-//        Json.update(new File("test.ubjson"), json -> {
-//            return parsed.asObject().set("array", Json.array(-1, 2, 3, 4));
-//        });
     }
 
     @Test
