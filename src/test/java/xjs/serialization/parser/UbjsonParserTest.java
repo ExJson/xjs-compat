@@ -85,7 +85,7 @@ public final class UbjsonParserTest {
     }
 
     @Test
-    void parse_readsUnCompressedArray() {
+    void parse_readsGenericArray() {
         assertParseEquals(Json.array(1, 2, 3, 4, 5),
             ARRAY_START,
                 U_INT8, (byte) 1,
@@ -156,7 +156,7 @@ public final class UbjsonParserTest {
     }
 
     @Test
-    void parse_readsUnCompressedObject() {
+    void parse_readsGenericObject() {
         assertParseEquals(
             Json.object()
                 .add("a", 1)

@@ -86,8 +86,8 @@ public final class UbjsonWriterTest {
     }
 
     @Test
-    void writeUnCompressed_doesNotCompressArray() {
-        assertUnCompressedEquals(Json.array(1, 2, 3, 4, 5),
+    void writeGeneric_doesNotCompressArray() {
+        assertGenericEquals(Json.array(1, 2, 3, 4, 5),
             ARRAY_START,
                 U_INT8, (byte) 1,
                 U_INT8, (byte) 2,
@@ -109,6 +109,21 @@ public final class UbjsonWriterTest {
                     (byte) 3,
                     (byte) 4,
                     (byte) 5);
+    }
+
+    @Test
+    void writeCompressed_hasStrongerCompression() {
+        assertCompressedEquals(
+            Json.array().add(
+                Json.array(1, 2, 3, 4, 5)),
+            ARRAY_START,
+                ARRAY_START, OPTIMIZED_TYPE, U_INT8, OPTIMIZED_SIZE, U_INT8, (byte) 5,
+                    (byte) 1,
+                    (byte) 2,
+                    (byte) 3,
+                    (byte) 4,
+                    (byte) 5,
+            ARRAY_END);
     }
 
     @Test
@@ -157,8 +172,8 @@ public final class UbjsonWriterTest {
     }
 
     @Test
-    void writeUnCompressed_doesNotCompressObject() {
-        assertUnCompressedEquals(
+    void writeGeneric_doesNotCompressObject() {
+        assertGenericEquals(
             Json.object()
                 .add("a", 1)
                 .add("b", 2)
@@ -175,10 +190,14 @@ public final class UbjsonWriterTest {
     }
 
     private static void assertWriteEquals(final JsonValue value, final Object... bytes) {
+        assertWriteEquals(UBTyping.BALANCED, value, bytes);
+    }
+
+    private static void assertCompressedEquals(final JsonValue value, final Object... bytes) {
         assertWriteEquals(UBTyping.COMPRESSED, value, bytes);
     }
 
-    private static void assertUnCompressedEquals(final JsonValue value, final Object... bytes) {
+    private static void assertGenericEquals(final JsonValue value, final Object... bytes) {
         assertWriteEquals(UBTyping.WEAK, value, bytes);
     }
 
