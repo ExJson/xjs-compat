@@ -256,38 +256,38 @@ public class UbjsonWriter implements ValueWriter {
 
     protected byte getNumberType(final JsonContainer container) {
         double max = Integer.MIN_VALUE;
-        boolean signed = false;
+        double min = Integer.MAX_VALUE;
         for (final JsonValue value : container.visitAll()) {
             if (!value.isNumber()) {
                 return 0;
             }
             max = Double.max(max, value.asDouble());
-            signed |= value.asDouble() < 0;
+            min = Double.min(min, value.asDouble());
         }
-        final byte type = this.getNumberType(max);
-        if (signed && type == UBMarker.U_INT8) {
-            return UBMarker.INT16;
-        }
-        return type;
+        return this.getNumberType(min, max);
     }
 
-    protected byte getNumberType(final double value) {
-        if ((long) value == value) {
-            if (value >= U_INT_8_MIN && value <= U_INT_8_MAX) {
+    protected byte getNumberType(final double min, final double max) {
+        if ((long) min == min && (long) max == max) {
+            if (min >= U_INT_8_MIN && max <= U_INT_8_MAX) {
                 return UBMarker.U_INT8;
-            } else if (value >= INT_8_MIN && value <= INT_8_MAX) {
+            } else if (min >= INT_8_MIN && max <= INT_8_MAX) {
                 return UBMarker.INT8;
-            } else if (value >= INT_16_MIN && value <= INT_16_MAX) {
+            } else if (min >= INT_16_MIN && max <= INT_16_MAX) {
                 return UBMarker.INT16;
-            } else if (value >= INT_32_MIN && value <= INT_32_MAX) {
+            } else if (min >= INT_32_MIN && max <= INT_32_MAX) {
                 return UBMarker.INT32;
             }
             return UBMarker.INT64;
         }
-        if ((float) value == value) {
+        if ((float) min == min && (float) max == max) {
             return UBMarker.FLOAT32;
         }
         return UBMarker.FLOAT64;
+    }
+
+    protected byte getNumberType(final double value) {
+        return this.getNumberType(value, value);
     }
 
     protected boolean isMarkerOnly(final byte marker) {
