@@ -213,24 +213,17 @@ public class UbjsonWriter implements ValueWriter {
     }
 
     protected byte getCompressionType(final JsonContainer container) {
-        if (container.size() < (this.typing == UBTyping.STRONG ? 1 : 2)) {
+        final int minSize = this.typing == UBTyping.STRONG ? 1 : 2;
+        if (container.size() < minSize) {
             return 0;
         }
-        byte lastType = this.getType(container.get(0));
-        boolean uniform = true;
-        for (final JsonValue value : container.visitAll()) {
-            final byte type = this.getType(value);
-            uniform &= type == lastType;
-            lastType = type;
+        final byte type = this.getContainerType(container);
+        if (this.typing != UBTyping.STRONG) {
+            if (this.isSingleByte(type) && container.size() < 5) {
+                return 0;
+            }
         }
-        if (!uniform) {
-            return 0;
-        }
-        if (lastType == UBMarker.INT8 || lastType == UBMarker.U_INT8) {
-            return this.typing == UBTyping.STRONG || container.size() > 4
-                ? lastType : 0;
-        }
-        return lastType;
+        return type;
     }
 
     protected byte getType(final JsonValue value) {
@@ -242,6 +235,40 @@ public class UbjsonWriter implements ValueWriter {
             case NUMBER: return this.getNumberType(value.asDouble());
             default: return UBMarker.NULL;
         }
+    }
+
+    protected byte getContainerType(final JsonContainer container) {
+        final JsonValue firstValue = container.get(0);
+        if (firstValue.isNumber()) {
+            return this.getNumberType(container);
+        }
+        final byte type = this.getType(firstValue);
+        if (this.isMarkerOnly(type)) {
+            return 0;
+        }
+        for (int i = 1; i < container.size(); i++) {
+            if (type != this.getType(container.getReference(i).getOnly())) {
+                return 0;
+            }
+        }
+        return type;
+    }
+
+    protected byte getNumberType(final JsonContainer container) {
+        double max = Integer.MIN_VALUE;
+        boolean signed = false;
+        for (final JsonValue value : container.visitAll()) {
+            if (!value.isNumber()) {
+                return 0;
+            }
+            max = Double.max(max, value.asDouble());
+            signed |= value.asDouble() < 0;
+        }
+        final byte type = this.getNumberType(max);
+        if (signed && type == UBMarker.U_INT8) {
+            return UBMarker.INT16;
+        }
+        return type;
     }
 
     protected byte getNumberType(final double value) {
@@ -261,6 +288,14 @@ public class UbjsonWriter implements ValueWriter {
             return UBMarker.FLOAT32;
         }
         return UBMarker.FLOAT64;
+    }
+
+    protected boolean isMarkerOnly(final byte marker) {
+        return marker == UBMarker.TRUE || marker == UBMarker.FALSE || marker == UBMarker.NULL;
+    }
+
+    protected boolean isSingleByte(final byte marker) {
+        return marker == UBMarker.INT8 || marker == UBMarker.U_INT8;
     }
 
     protected void writeObject(final JsonObject object) throws IOException {
