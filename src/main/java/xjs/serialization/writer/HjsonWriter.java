@@ -2,7 +2,6 @@ package xjs.serialization.writer;
 
 import xjs.core.CommentType;
 import xjs.core.JsonContainer;
-import xjs.core.JsonObject;
 import xjs.core.JsonValue;
 import xjs.core.JsonReference;
 import xjs.core.StringType;
@@ -33,81 +32,19 @@ public class HjsonWriter extends XjsWriter {
     }
 
     @Override
-    protected void write(final JsonValue value, final int level) throws IOException {
-        this.write(value, false, level);
-    }
-
-    protected void write(final JsonValue value, final boolean parentCondensed, final int level) throws IOException {
-        final boolean condensed = this.isCondensed(value);
-        JsonValue previous = null;
-
-        switch (value.getType()) {
-            case OBJECT:
-                this.open(value.asObject(), condensed, '{');
-                for (final JsonObject.Member member : value.asObject()) {
-                    this.writeNextMember(value, previous, member, condensed, level);
-                    previous = member.getOnly();
-                }
-                this.writeEolComment(level, previous, null);
-                this.close(value.asObject(), condensed, level, '}');
-                break;
-            case ARRAY:
-                this.open(value.asArray(), condensed, '[');
-                for (final JsonValue v : value.asArray().visitAll()) {
-                    this.writeNextElement(value, previous, v, condensed, level);
-                    previous = v;
-                }
-                this.writeEolComment(level, previous, null);
-                this.close(value.asArray(), condensed, level, ']');
-                break;
-            case NUMBER:
-                this.writeNumber(value.asDouble());
-                break;
-            case STRING:
-                this.writeString(value, parentCondensed, level);
-                break;
-            default:
-                this.tw.write(value.toString());
-        }
+    protected boolean shouldSeparateOpener() {
+        final JsonContainer c = this.parent();
+        return c.size() > 0 && this.getLinesAbove(this.getFirst(c)) == 0;
     }
 
     @Override
-    protected boolean shouldSeparateOpener(final JsonContainer c, final boolean condensed) {
-        return c.size() > 0 && c.getReference(0).getOnly().getLinesAbove() == 0;
-    }
-
-    @Override
-    protected void writeNextMember(
-            JsonValue parent, JsonValue previous, JsonObject.Member member, boolean condensed, int level) throws IOException {
-        this.delimit(previous, member.getOnly());
-        this.writeEolComment(level, previous, member.getOnly());
-        this.writeLinesAbove(level + 1, parent, previous, condensed, member.getOnly());
-        this.writeHeader(level + 1, member.getOnly());
-        this.writeString(member.getKey(), level);
-        this.tw.write(':');
-        this.separate(level + 2, member.getOnly());
-        this.writeValueComment(level + 2, member.getOnly());
-        this.write(member.getOnly(), condensed, level + 1);
-    }
-
-    @Override
-    protected void writeNextElement(
-            JsonValue parent, JsonValue previous, JsonValue value, boolean condensed, int level) throws IOException {
-        this.delimit(previous, value);
-        this.writeEolComment(level, previous, value);
-        this.writeLinesAbove(level + 1, parent, previous, condensed, value);
-        this.writeHeader(level + 1, value);
-        this.write(value, condensed, level + 1);
-    }
-
-    @Override
-    protected void delimit(final JsonValue previous, final JsonValue next) throws IOException {
-        if (previous == null) {
+    protected void delimit() throws IOException {
+        if (this.peek == null) {
             return;
         }
         if (!this.format) {
             this.tw.write(',');
-        } else if (next.getLinesAbove() == 0 && this.allowCondense) {
+        } else if (this.allowCondense && this.getLinesAbove(this.peek()) == 0) {
             this.tw.write(',');
             this.tw.write(this.separator);
         }
@@ -131,8 +68,8 @@ public class HjsonWriter extends XjsWriter {
         return whitespaceFound ? StringType.SINGLE : StringType.IMPLICIT;
     }
 
-    protected void writeString(final JsonValue value, final boolean condensed, int level) throws IOException {
-        switch (this.getStringType(value, condensed)) {
+    protected void writeString(final JsonValue value) throws IOException {
+        switch (this.getStringType(value)) {
             case SINGLE:
                 this.writeQuoted(value.asString(), '\'');
                 break;
@@ -140,7 +77,7 @@ public class HjsonWriter extends XjsWriter {
                 this.writeQuoted(value.asString(), '"');
                 break;
             case MULTI:
-                this.writeMulti(value.asString(), level + 1);
+                this.writeMulti(value.asString());
                 break;
             case IMPLICIT:
                 this.tw.write(value.asString());
@@ -150,11 +87,11 @@ public class HjsonWriter extends XjsWriter {
         }
     }
 
-    protected StringType getStringType(final JsonValue value, final boolean condensed) {
+    protected StringType getStringType(final JsonValue value) {
         final StringType type = StringType.fromValue(value);
         final String s = value.asString();
 
-        if (condensed && (type == StringType.IMPLICIT || type == StringType.NONE)) {
+        if (this.isCondensed() && (type == StringType.IMPLICIT || type == StringType.NONE)) {
             return s.contains("'") ? StringType.DOUBLE : StringType.SINGLE;
         } else if (type == StringType.MULTI) {
             return type;
@@ -195,33 +132,30 @@ public class HjsonWriter extends XjsWriter {
     }
 
     @Override
-    protected boolean isCondensed(final JsonValue value) {
-        if (!this.format) {
+    protected boolean isCondensed(final JsonContainer c) {
+        if (!this.format || this.allowCondense) {
             return true;
         }
+        if (this.level == -1) {
+            return this.isOpenRootCondensed(c);
+        }
         // Use a stricter algorithm to tolerate Hjson's stricter syntax rules
-        if (this.allowCondense && value.isContainer()) {
-            for (final JsonReference reference : value.asContainer().references()) {
-                if (reference.getOnly().getLinesAbove() == 0) {
-                    return true;
-                }
+        for (final JsonReference reference : c.references()) {
+            if (reference.getOnly().getLinesAbove() == 0) {
+                return true;
             }
         }
         return false;
     }
 
-    @Override
-    protected boolean isOpenRootCondensed(final JsonValue value) {
-        if (this.allowCondense && value.isContainer()) {
-            final JsonContainer c = value.asContainer();
-            if (c.size() < 2) {
-                return false;
-            }
-            // Ignore the first value in an open root
-            for (int i = 1; i < c.size(); i++) {
-                if (c.getReference(i).getOnly().getLinesAbove() == 0) {
-                    return true;
-                }
+    protected boolean isOpenRootCondensed(final JsonContainer c) {
+        if (c.size() < 2) {
+            return false;
+        }
+        // Ignore the first value in an open root
+        for (int i = 1; i < c.size(); i++) {
+            if (c.getReference(i).getOnly().getLinesAbove() == 0) {
+                return true;
             }
         }
         return false;
