@@ -5,7 +5,6 @@ import org.jetbrains.annotations.Nullable;
 import xjs.core.CommentType;
 import xjs.core.Json;
 import xjs.core.JsonArray;
-import xjs.core.JsonContainer;
 import xjs.core.JsonLiteral;
 import xjs.core.JsonObject;
 import xjs.core.JsonString;
@@ -56,7 +55,8 @@ public class HjsonParser extends CommentedTokenParser {
     }
 
     protected boolean isOpenRoot() {
-        if (this.current.type() != Type.WORD) {
+        final Type type = this.current.type();
+        if (type == Type.SYMBOL) { // punctuation
             return false;
         }
         final Token peek = this.peekWhitespace();
@@ -96,7 +96,6 @@ public class HjsonParser extends CommentedTokenParser {
             }
         } while (this.readNextMember(object));
         this.readBottom();
-        this.expectEndOfText();
         return this.takeFormatting(object);
     }
 
@@ -121,7 +120,7 @@ public class HjsonParser extends CommentedTokenParser {
 
     protected JsonObject readObject() {
         final JsonObject object = new JsonObject();
-        if (!this.open('}')) {
+        if (!this.open('{', '}')) {
             return this.close(object, '}');
         }
         do {
@@ -130,7 +129,6 @@ public class HjsonParser extends CommentedTokenParser {
                 return this.close(object, '}');
             }
         } while (this.readNextMember(object));
-        this.expectEndOfContainer('}');
         return this.close(object, '}');
     }
 
@@ -173,7 +171,7 @@ public class HjsonParser extends CommentedTokenParser {
 
     protected JsonArray readArray() {
         final JsonArray array = new JsonArray();
-        if (!this.open(']')) {
+        if (!this.open('[', ']')) {
             return this.close(array, ']');
         }
         do {
@@ -182,7 +180,6 @@ public class HjsonParser extends CommentedTokenParser {
                 return this.close(array, ']');
             }
         } while (this.readNextElement(array));
-        this.expectEndOfContainer(']');
         return this.close(array, ']');
     }
 
@@ -213,25 +210,6 @@ public class HjsonParser extends CommentedTokenParser {
             this.setComment(CommentType.EOL);
         }
         return false;
-    }
-
-    protected boolean open(final char closer) {
-        this.read();
-        this.readWhitespace();
-        return !this.current.isSymbol(closer);
-    }
-
-    protected <T extends JsonContainer> T close(
-            final T container, final char closer) {
-        this.expect(closer);
-        this.setTrailing();
-        this.takeFormatting(container);
-        return container;
-    }
-
-    protected boolean isEndOfContainer(final char closer) {
-        return this.current == EMPTY_VALUE
-            || this.current.isSymbol(closer);
     }
 
     protected JsonValue readUnquoted() {
@@ -293,22 +271,12 @@ public class HjsonParser extends CommentedTokenParser {
         return c == '{' || c == '}' || c == '[' || c == ']' || c == ',' || c == ':';
     }
 
-    protected void expectEndOfContainer(final char closer) {
-        if (!this.isEndOfContainer(closer)) {
-            throw this.tokensInContainer();
-        }
-    }
-
     protected SyntaxException emptyKey() {
         return this.expected("key (for an empty key name use quotes)");
     }
 
     protected SyntaxException whitespaceInKey() {
         return this.unexpected("whitespace in key (use quotes to include)");
-    }
-
-    protected SyntaxException tokensInContainer() {
-        return this.unexpected("additional tokens in container (missing delimiter?)");
     }
 
     protected SyntaxException punctuationInKey(final char c) {

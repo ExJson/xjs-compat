@@ -16,7 +16,6 @@ import xjs.core.StringType;
 import xjs.serialization.JsonContext;
 import xjs.serialization.parser.HjsonParser;
 
-import java.io.IOException;
 import java.io.StringWriter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -74,7 +73,14 @@ public final class HjsonWriterTest {
 
     @Test
     public void write_printsMultiString() {
-        assertEquals("'''\n  test\n  '''", write(new JsonString("test", StringType.MULTI)));
+        assertEquals("'''\ntest\n'''", write(new JsonString("test", StringType.MULTI)));
+    }
+
+    @Test
+    public void write_formatsMultiString_forCurrentLevel() {
+        assertEquals("[\n  '''\n  test\n  '''\n]",
+            write(new JsonArray()
+                .add(new JsonString("test", StringType.MULTI))));
     }
 
     @Test
@@ -191,20 +197,18 @@ public final class HjsonWriterTest {
                 .add("5", new JsonArray().add(6).add(7).add(8).condense())
                 .add("9", 0);
         final String expected = """
-
             1: 2
               
             3: 4
               
             5: [ 6, 7, 8 ]
               
-            9: 0
-            """;
+            9: 0""";
         assertEquals(expected, write(object, options));
     }
 
     @Test
-    public void write_withMinAndMaxSpacing_overridesConfiguredSpacing_ignoringCondensed() throws IOException {
+    public void write_withMinAndMaxSpacing_overridesConfiguredSpacing_ignoringCondensed() {
         final JsonWriterOptions options = new JsonWriterOptions().setMinSpacing(2).setMaxSpacing(2);
         final String input = """
             1: 2
@@ -213,7 +217,6 @@ public final class HjsonWriterTest {
               6: [ 7, 8, 9 ]
             }""";
         final String expected = """
-
             1: 2
             
             3: 4
@@ -237,7 +240,7 @@ public final class HjsonWriterTest {
     }
 
     @Test
-    public void parse_thenRewrite_preservesComplexFormatting() throws IOException {
+    public void parse_thenRewrite_preservesComplexFormatting() {
         final String expected = """
             
             # Header
@@ -279,8 +282,7 @@ public final class HjsonWriterTest {
             
             b: '})](*&(*%#&)!'
             c: { '': '' }
-            d: [ '', '', '' ]
-            """;
+            d: [ '', '', '' ]""";
         assertEquals(expected, write(new HjsonParser(expected).parse()));
     }
 
@@ -360,7 +362,7 @@ public final class HjsonWriterTest {
     }
 
     @Test
-    public void write_withSmartSpacing_separatesContainers() throws IOException {
+    public void write_withSmartSpacing_separatesContainers() {
         final String input = """
             a: 1
             b: 2

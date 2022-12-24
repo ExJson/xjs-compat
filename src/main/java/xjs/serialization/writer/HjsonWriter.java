@@ -34,7 +34,16 @@ public class HjsonWriter extends XjsWriter {
     @Override
     protected boolean shouldSeparateOpener() {
         final JsonContainer c = this.parent();
-        return c.size() > 0 && this.getLinesAbove(this.getFirst(c)) == 0;
+        return this.format
+            && this.allowCondense
+            && this.level > 0
+            && c.size() > 0
+            && this.getLinesAbove(this.getFirst(this.parent())) == 0;
+    }
+
+    @Override
+    protected boolean shouldSeparateCloser() {
+        return this.level > 0 && this.isCondensed();
     }
 
     @Override
@@ -133,10 +142,11 @@ public class HjsonWriter extends XjsWriter {
 
     @Override
     protected boolean isCondensed(final JsonContainer c) {
-        if (!this.format || this.allowCondense) {
+        if (!this.format) {
             return true;
-        }
-        if (this.level == -1) {
+        } else if (c == null || !this.allowCondense) {
+            return false;
+        } else if (this.level < 1) {
             return this.isOpenRootCondensed(c);
         }
         // Use a stricter algorithm to tolerate Hjson's stricter syntax rules

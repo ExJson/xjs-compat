@@ -47,6 +47,12 @@ public final class HjsonParserTest extends CommonParserTest {
     }
 
     @Test
+    public void parse_doesNotTolerate_nonDelimitedContainers() {
+        assertThrows(SyntaxException.class,
+            () -> this.parse("[[][]]"));
+    }
+
+    @Test
     public void parse_noValueForLastKey_isEmptyString() {
         assertTrue(new JsonObject().add("k", "")
             .matches(this.parse("k:")));
