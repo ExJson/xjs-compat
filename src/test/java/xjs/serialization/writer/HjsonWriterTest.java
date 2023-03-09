@@ -3,8 +3,8 @@ package xjs.serialization.writer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import xjs.core.CommentStyle;
-import xjs.core.CommentType;
+import xjs.comments.CommentStyle;
+import xjs.comments.CommentType;
 import xjs.core.Json;
 import xjs.core.JsonArray;
 import xjs.core.JsonCopy;
@@ -263,10 +263,18 @@ public final class HjsonWriterTest {
               
               
               /**
-               * Interior
+               * Interior 1
+               * Interior 2
                */
             
             ] # eol
+            
+            a1:
+              /**
+               * 1
+               * 2
+               */
+              block value
             
             enter: {
               level: {
@@ -330,7 +338,7 @@ public final class HjsonWriterTest {
     @Test
     public void writeValueComment_withLinesBetween_andLinesBelow_doesNotInsertExtraLines() {
         final JsonValue v = new JsonString("v", StringType.IMPLICIT);
-        v.getComments().setData(CommentType.VALUE, "/* Value */\n");
+        v.setComment(CommentType.VALUE, CommentStyle.BLOCK, "Value");
         v.setLinesBetween(1);
 
         assertEquals("k:\n  /* Value */\n  v", write(new JsonObject().add("k", v)));

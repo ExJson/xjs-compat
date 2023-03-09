@@ -1,6 +1,6 @@
 package xjs.serialization.writer;
 
-import xjs.core.CommentType;
+import xjs.comments.CommentType;
 import xjs.core.JsonContainer;
 import xjs.core.JsonValue;
 import xjs.core.JsonReference;

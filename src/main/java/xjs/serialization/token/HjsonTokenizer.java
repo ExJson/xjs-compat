@@ -1,7 +1,6 @@
 package xjs.serialization.token;
 
 import org.jetbrains.annotations.Nullable;
-import xjs.serialization.token.Token.Type;
 import xjs.serialization.util.PositionTrackingReader;
 
 import java.io.IOException;
@@ -53,7 +52,9 @@ public class HjsonTokenizer extends Tokenizer {
     @Override
     protected @Nullable Token single() throws IOException {
         final Token single = super.single();
-        this.updateContext(single);
+        if (single != null) {
+            this.updateContext(single);
+        }
         return single;
     }
 
@@ -69,7 +70,7 @@ public class HjsonTokenizer extends Tokenizer {
             } else if (symbol == ':') {
                 this.colonRead = true;
             }
-        } else {
+        } else if (t.type() != TokenType.BREAK && t.type() != TokenType.COMMENT) {
             this.colonRead = false;
         }
         this.top = false;
@@ -129,7 +130,7 @@ public class HjsonTokenizer extends Tokenizer {
         if (this.top) {
             return this.checkFirstOpenKey(i, l, o);
         }
-        return new Token(i, reader.index, l, o, Type.WORD);
+        return new Token(i, reader.index, l, o, TokenType.WORD);
     }
 
     protected boolean isLegalKeyCharacter(final char c) {
@@ -148,7 +149,7 @@ public class HjsonTokenizer extends Tokenizer {
         final int e = reader.index;
         reader.skipLineWhitespace();
         if (reader.current == ':' || reader.current == '\n') {
-            return new Token(i, e, l, o, Type.WORD);
+            return new Token(i, e, l, o, TokenType.WORD);
         }
         return unquoted(i, l, o);
     }
@@ -161,6 +162,6 @@ public class HjsonTokenizer extends Tokenizer {
         }
         final int last = reader.skipToNL();
         final int e = Math.min(last + 1, reader.getFullText().length());
-        return new Token(i, e, l, o, Type.WORD);
+        return new Token(i, e, l, o, TokenType.WORD);
     }
 }

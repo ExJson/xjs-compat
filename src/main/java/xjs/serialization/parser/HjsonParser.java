@@ -2,22 +2,21 @@ package xjs.serialization.parser;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xjs.core.CommentType;
+import xjs.comments.CommentType;
 import xjs.core.Json;
 import xjs.core.JsonArray;
 import xjs.core.JsonLiteral;
 import xjs.core.JsonObject;
 import xjs.core.JsonString;
 import xjs.core.JsonValue;
-import xjs.core.StringType;
 import xjs.exception.SyntaxException;
 import xjs.serialization.token.HjsonTokenizer;
 import xjs.serialization.token.NumberToken;
 import xjs.serialization.token.StringToken;
 import xjs.serialization.token.SymbolToken;
 import xjs.serialization.token.Token;
-import xjs.serialization.token.Token.Type;
 import xjs.serialization.token.TokenStream;
+import xjs.serialization.token.TokenType;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,11 +28,11 @@ import java.io.IOException;
 public class HjsonParser extends CommentedTokenParser {
 
     public HjsonParser(final File file) throws IOException {
-        super(new TokenStream(new HjsonTokenizer(new FileInputStream(file)), Type.OPEN));
+        super(new TokenStream(new HjsonTokenizer(new FileInputStream(file)), TokenType.OPEN));
     }
 
     public HjsonParser(final String text) {
-        super(new TokenStream(new HjsonTokenizer(text), Type.OPEN));
+        super(new TokenStream(new HjsonTokenizer(text), TokenType.OPEN));
     }
 
     public HjsonParser(final TokenStream root) {
@@ -42,7 +41,7 @@ public class HjsonParser extends CommentedTokenParser {
 
     @Override
     public @NotNull JsonValue parse() {
-        if (this.root.type() == Type.OPEN) {
+        if (this.root.type() == TokenType.OPEN) {
             this.read();
         }
         this.readWhitespace();
@@ -55,8 +54,8 @@ public class HjsonParser extends CommentedTokenParser {
     }
 
     protected boolean isOpenRoot() {
-        final Type type = this.current.type();
-        if (type == Type.SYMBOL) { // punctuation
+        final TokenType type = this.current.type();
+        if (type == TokenType.SYMBOL) { // punctuation
             return false;
         }
         final Token peek = this.peekWhitespace();
@@ -74,9 +73,7 @@ public class HjsonParser extends CommentedTokenParser {
         while (peek != null) {
             switch (peek.type()) {
                 case BREAK:
-                case HASH_COMMENT:
-                case LINE_COMMENT:
-                case BLOCK_COMMENT:
+                case COMMENT:
                     peek = this.iterator.peek(++peekAmount);
                     break;
                 default:
@@ -157,12 +154,12 @@ public class HjsonParser extends CommentedTokenParser {
         }
         final String text;
         if (this.current instanceof StringToken) {
-            text = ((StringToken) this.current).parsed;
+            text = this.current.parsed();
         } else {
             text = this.current.textOf(this.reference);
         }
         final Token peek = this.peekWhitespace();
-        if (peek != null && peek.type() != Type.SYMBOL) {
+        if (peek != null && peek.type() != TokenType.SYMBOL) {
             throw this.whitespaceInKey();
         }
         this.read();
@@ -220,8 +217,7 @@ public class HjsonParser extends CommentedTokenParser {
             }
             return Json.value(((NumberToken) this.current).number);
         } else if (this.current instanceof StringToken) {
-            final StringToken t = (StringToken) this.current;
-            return new JsonString(t.parsed, this.getStringType(t));
+            return new JsonString(this.current.parsed(), this.current.stringType());
         } else if (this.current instanceof SymbolToken) {
             final char c = ((SymbolToken) this.current).symbol;
             // Tokenizer only returns symbols for punctuation.
@@ -242,12 +238,10 @@ public class HjsonParser extends CommentedTokenParser {
         if (peek == null) {
             return null;
         }
-        final Type type = peek.type();
-        if (type == Type.BREAK
-                || type == Type.HASH_COMMENT
-                || type == Type.LINE_COMMENT
-                || type == Type.BLOCK_COMMENT
-                || type == Type.SYMBOL) {
+        final TokenType type = peek.type();
+        if (type == TokenType.BREAK
+                || type == TokenType.COMMENT
+                || type == TokenType.SYMBOL) {
             return null;
         }
         final int s = this.current.start();
@@ -256,15 +250,6 @@ public class HjsonParser extends CommentedTokenParser {
                 this.iterator.getText(s, this.current.end()));
         }
         return null;
-    }
-
-    protected StringType getStringType(final StringToken t) {
-        switch (t.type()) {
-            case SINGLE_QUOTE: return StringType.SINGLE;
-            case DOUBLE_QUOTE: return StringType.DOUBLE;
-            case TRIPLE_QUOTE: return StringType.MULTI;
-        }
-        throw new IllegalStateException("unreachable");
     }
 
     protected boolean isPunctuationChar(final char c) {
