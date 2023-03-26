@@ -26,7 +26,7 @@ public class TxtParser implements ValueParser {
 
     @Override
     public @NotNull JsonValue parse() {
-        return new JsonString(this.text, StringType.IMPLICIT);
+        return new JsonString(this.text);
     }
 
     @Override
