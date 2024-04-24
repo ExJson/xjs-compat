@@ -39,14 +39,14 @@ public class UbjsonParser implements ValueParser {
     }
 
     protected long readInt(final byte type) throws IOException {
-        switch (type) {
-            case UBMarker.INT8: return this.read();
-            case UBMarker.U_INT8: return this.readUInt8();
-            case UBMarker.INT16: return this.readInt16();
-            case UBMarker.INT32: return this.readInt32();
-            case UBMarker.INT64: return this.readInt64();
-            default: throw new IOException("Not an integer");
-        }
+        return switch (type) {
+            case UBMarker.INT8 -> this.read();
+            case UBMarker.U_INT8 -> this.readUInt8();
+            case UBMarker.INT16 -> this.readInt16();
+            case UBMarker.INT32 -> this.readInt32();
+            case UBMarker.INT64 -> this.readInt64();
+            default -> throw new IOException("Not an integer");
+        };
     }
 
     protected short readUInt8() throws IOException {

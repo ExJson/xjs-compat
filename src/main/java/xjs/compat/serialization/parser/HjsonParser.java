@@ -226,12 +226,12 @@ public class HjsonParser extends CommentedTokenParser {
             throw this.punctuationInValue(c);
         }
         final String text = this.current.textOf(this.reference);
-        switch (text) {
-            case "true": return JsonLiteral.jsonTrue();
-            case "false": return JsonLiteral.jsonFalse();
-            case "null": return JsonLiteral.jsonNull();
-            default: return new JsonString(text);
-        }
+        return switch (text) {
+            case "true" -> JsonLiteral.jsonTrue();
+            case "false" -> JsonLiteral.jsonFalse();
+            case "null" -> JsonLiteral.jsonNull();
+            default -> new JsonString(text);
+        };
     }
 
     protected @Nullable JsonValue checkAfterUnquoted() {

@@ -228,14 +228,14 @@ public class UbjsonWriter implements ValueWriter {
     }
 
     protected byte getType(final JsonValue value) {
-        switch (value.getType()) {
-            case STRING: return UBMarker.STRING;
-            case BOOLEAN: return value.asBoolean() ? UBMarker.TRUE : UBMarker.FALSE;
-            case ARRAY: return UBMarker.ARRAY_START;
-            case OBJECT: return UBMarker.OBJ_START;
-            case NUMBER: return this.getNumberType(value.asDouble());
-            default: return UBMarker.NULL;
-        }
+        return switch (value.getType()) {
+            case STRING -> UBMarker.STRING;
+            case BOOLEAN -> value.asBoolean() ? UBMarker.TRUE : UBMarker.FALSE;
+            case ARRAY -> UBMarker.ARRAY_START;
+            case OBJECT -> UBMarker.OBJ_START;
+            case NUMBER -> this.getNumberType(value.asDouble());
+            default -> UBMarker.NULL;
+        };
     }
 
     protected byte getContainerType(final JsonContainer container) {
@@ -351,23 +351,12 @@ public class UbjsonWriter implements ValueWriter {
 
     protected void writeValue(final JsonValue value) throws IOException {
         switch (value.getType()) {
-            case NUMBER:
-                this.writeNumber(value.asDouble());
-                break;
-            case ARRAY:
-                this.writeArray(value.asArray());
-                break;
-            case OBJECT:
-                this.writeObject(value.asObject());
-                break;
-            case BOOLEAN:
-                this.writeBool(value.asBoolean());
-                break;
-            case STRING:
-                this.writeString(value.asString());
-                break;
-            default:
-                this.writeNull();
+            case NUMBER -> this.writeNumber(value.asDouble());
+            case ARRAY -> this.writeArray(value.asArray());
+            case OBJECT -> this.writeObject(value.asObject());
+            case BOOLEAN -> this.writeBool(value.asBoolean());
+            case STRING -> this.writeString(value.asString());
+            default -> this.writeNull();
         }
     }
 

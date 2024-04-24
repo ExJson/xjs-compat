@@ -81,20 +81,11 @@ public class HjsonWriter extends XjsWriter {
 
     protected void writeString(final JsonValue value) throws IOException {
         switch (this.getStringType(value)) {
-            case SINGLE:
-                this.writeQuoted(value.asString(), '\'');
-                break;
-            case DOUBLE:
-                this.writeQuoted(value.asString(), '"');
-                break;
-            case MULTI:
-                this.writeMulti(value.asString());
-                break;
-            case IMPLICIT:
-                this.tw.write(value.asString());
-                break;
-            default:
-                throw new IllegalStateException("unreachable");
+            case SINGLE -> this.writeQuoted(value.asString(), '\'');
+            case DOUBLE -> this.writeQuoted(value.asString(), '"');
+            case MULTI -> this.writeMulti(value.asString());
+            case IMPLICIT -> this.tw.write(value.asString());
+            default -> throw new IllegalStateException("unreachable");
         }
     }
 
