@@ -1,4 +1,4 @@
-package xjs.serialization;
+package xjs.compat.serialization;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

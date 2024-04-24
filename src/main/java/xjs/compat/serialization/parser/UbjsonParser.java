@@ -1,8 +1,9 @@
-package xjs.serialization.parser;
+package xjs.compat.serialization.parser;
 
 import org.jetbrains.annotations.NotNull;
 import xjs.core.*;
-import xjs.serialization.util.UBMarker;
+import xjs.serialization.parser.ValueParser;
+import xjs.compat.serialization.util.UBMarker;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;

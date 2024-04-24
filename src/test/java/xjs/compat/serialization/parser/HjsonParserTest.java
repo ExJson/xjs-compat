@@ -1,4 +1,4 @@
-package xjs.serialization.parser;
+package xjs.compat.serialization.parser;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

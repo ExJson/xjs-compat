@@ -1,4 +1,4 @@
-package xjs.serialization.util;
+package xjs.compat.serialization.util;
 
 import xjs.core.JsonValue;
 

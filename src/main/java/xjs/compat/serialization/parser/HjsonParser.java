@@ -1,8 +1,9 @@
-package xjs.serialization.parser;
+package xjs.compat.serialization.parser;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xjs.comments.CommentType;
+import xjs.compat.serialization.token.HjsonTokenizer;
 import xjs.core.Json;
 import xjs.core.JsonArray;
 import xjs.core.JsonLiteral;
@@ -10,7 +11,7 @@ import xjs.core.JsonObject;
 import xjs.core.JsonString;
 import xjs.core.JsonValue;
 import xjs.exception.SyntaxException;
-import xjs.serialization.token.HjsonTokenizer;
+import xjs.serialization.parser.CommentedTokenParser;
 import xjs.serialization.token.NumberToken;
 import xjs.serialization.token.StringToken;
 import xjs.serialization.token.SymbolToken;

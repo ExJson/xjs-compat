@@ -1,30 +1,30 @@
-package xjs.serialization.writer;
+package xjs.compat.serialization.writer;
 
 import org.junit.jupiter.api.Test;
 import xjs.core.Json;
 import xjs.core.JsonLiteral;
 import xjs.core.JsonValue;
-import xjs.serialization.TestUtils;
-import xjs.serialization.util.UBTyping;
+import xjs.compat.serialization.TestUtils;
+import xjs.compat.serialization.util.UBTyping;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 
-import static xjs.serialization.util.UBMarker.ARRAY_END;
-import static xjs.serialization.util.UBMarker.ARRAY_START;
-import static xjs.serialization.util.UBMarker.FALSE;
-import static xjs.serialization.util.UBMarker.FLOAT32;
-import static xjs.serialization.util.UBMarker.FLOAT64;
-import static xjs.serialization.util.UBMarker.INT16;
-import static xjs.serialization.util.UBMarker.INT32;
-import static xjs.serialization.util.UBMarker.NULL;
-import static xjs.serialization.util.UBMarker.OBJ_END;
-import static xjs.serialization.util.UBMarker.OBJ_START;
-import static xjs.serialization.util.UBMarker.OPTIMIZED_SIZE;
-import static xjs.serialization.util.UBMarker.OPTIMIZED_TYPE;
-import static xjs.serialization.util.UBMarker.STRING;
-import static xjs.serialization.util.UBMarker.TRUE;
-import static xjs.serialization.util.UBMarker.U_INT8;
+import static xjs.compat.serialization.util.UBMarker.ARRAY_END;
+import static xjs.compat.serialization.util.UBMarker.ARRAY_START;
+import static xjs.compat.serialization.util.UBMarker.FALSE;
+import static xjs.compat.serialization.util.UBMarker.FLOAT32;
+import static xjs.compat.serialization.util.UBMarker.FLOAT64;
+import static xjs.compat.serialization.util.UBMarker.INT16;
+import static xjs.compat.serialization.util.UBMarker.INT32;
+import static xjs.compat.serialization.util.UBMarker.NULL;
+import static xjs.compat.serialization.util.UBMarker.OBJ_END;
+import static xjs.compat.serialization.util.UBMarker.OBJ_START;
+import static xjs.compat.serialization.util.UBMarker.OPTIMIZED_SIZE;
+import static xjs.compat.serialization.util.UBMarker.OPTIMIZED_TYPE;
+import static xjs.compat.serialization.util.UBMarker.STRING;
+import static xjs.compat.serialization.util.UBMarker.TRUE;
+import static xjs.compat.serialization.util.UBMarker.U_INT8;
 
 public final class UbjsonWriterTest {
 

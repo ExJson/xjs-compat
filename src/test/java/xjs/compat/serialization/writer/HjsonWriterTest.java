@@ -1,10 +1,11 @@
-package xjs.serialization.writer;
+package xjs.compat.serialization.writer;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import xjs.comments.CommentStyle;
 import xjs.comments.CommentType;
+import xjs.compat.serialization.parser.HjsonParser;
 import xjs.core.Json;
 import xjs.core.JsonArray;
 import xjs.core.JsonCopy;
@@ -14,7 +15,7 @@ import xjs.core.JsonString;
 import xjs.core.JsonValue;
 import xjs.core.StringType;
 import xjs.serialization.JsonContext;
-import xjs.serialization.parser.HjsonParser;
+import xjs.serialization.writer.JsonWriterOptions;
 
 import java.io.StringWriter;
 

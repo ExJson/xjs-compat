@@ -1,4 +1,4 @@
-package xjs.serialization.parser;
+package xjs.compat.serialization.parser;
 
 import org.junit.jupiter.api.Test;
 import xjs.core.JsonArray;

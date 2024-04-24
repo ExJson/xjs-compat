@@ -1,6 +1,10 @@
-package xjs.serialization.token;
+package xjs.compat.serialization.token;
 
 import org.jetbrains.annotations.Nullable;
+import xjs.serialization.token.SymbolToken;
+import xjs.serialization.token.Token;
+import xjs.serialization.token.TokenType;
+import xjs.serialization.token.Tokenizer;
 import xjs.serialization.util.PositionTrackingReader;
 
 import java.io.IOException;

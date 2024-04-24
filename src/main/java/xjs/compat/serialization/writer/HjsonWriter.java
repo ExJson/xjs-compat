@@ -1,10 +1,12 @@
-package xjs.serialization.writer;
+package xjs.compat.serialization.writer;
 
 import xjs.comments.CommentType;
 import xjs.core.JsonContainer;
 import xjs.core.JsonValue;
 import xjs.core.JsonReference;
 import xjs.core.StringType;
+import xjs.serialization.writer.JsonWriterOptions;
+import xjs.serialization.writer.XjsWriter;
 
 import java.io.File;
 import java.io.IOException;
