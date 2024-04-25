@@ -1,9 +1,9 @@
 package xjs.compat.serialization.parser;
 
 import org.junit.jupiter.api.Test;
-import xjs.core.Json;
-import xjs.core.JsonLiteral;
-import xjs.core.JsonValue;
+import xjs.data.Json;
+import xjs.data.JsonLiteral;
+import xjs.data.JsonValue;
 import xjs.compat.serialization.TestUtils;
 
 import java.io.ByteArrayInputStream;

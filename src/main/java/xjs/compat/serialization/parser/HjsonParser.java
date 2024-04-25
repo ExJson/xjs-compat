@@ -2,22 +2,22 @@ package xjs.compat.serialization.parser;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import xjs.comments.CommentType;
 import xjs.compat.serialization.token.HjsonTokenizer;
-import xjs.core.Json;
-import xjs.core.JsonArray;
-import xjs.core.JsonLiteral;
-import xjs.core.JsonObject;
-import xjs.core.JsonString;
-import xjs.core.JsonValue;
-import xjs.exception.SyntaxException;
-import xjs.serialization.parser.CommentedTokenParser;
-import xjs.serialization.token.NumberToken;
-import xjs.serialization.token.StringToken;
-import xjs.serialization.token.SymbolToken;
-import xjs.serialization.token.Token;
-import xjs.serialization.token.TokenStream;
-import xjs.serialization.token.TokenType;
+import xjs.data.comments.CommentType;
+import xjs.data.Json;
+import xjs.data.JsonArray;
+import xjs.data.JsonLiteral;
+import xjs.data.JsonObject;
+import xjs.data.JsonString;
+import xjs.data.JsonValue;
+import xjs.data.exception.SyntaxException;
+import xjs.data.serialization.parser.CommentedTokenParser;
+import xjs.data.serialization.token.NumberToken;
+import xjs.data.serialization.token.StringToken;
+import xjs.data.serialization.token.SymbolToken;
+import xjs.data.serialization.token.Token;
+import xjs.data.serialization.token.TokenStream;
+import xjs.data.serialization.token.TokenType;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,14 +26,15 @@ import java.io.IOException;
 /**
  * A parser providing compatibility with Hjson files.
  */
+@SuppressWarnings("UnstableApiUsage")
 public class HjsonParser extends CommentedTokenParser {
 
     public HjsonParser(final File file) throws IOException {
-        super(new TokenStream(new HjsonTokenizer(new FileInputStream(file)), TokenType.OPEN));
+        super(HjsonTokenizer.stream(new FileInputStream(file)));
     }
 
     public HjsonParser(final String text) {
-        super(new TokenStream(new HjsonTokenizer(text), TokenType.OPEN));
+        super(HjsonTokenizer.stream(text));
     }
 
     public HjsonParser(final TokenStream root) {
@@ -63,9 +64,7 @@ public class HjsonParser extends CommentedTokenParser {
         if (peek == null) {
             return false;
         }
-        return peek.isSymbol(':')
-            && this.current.textOf(this.reference)
-                .matches("\\S+");
+        return peek.isSymbol(':');
     }
 
     protected @Nullable Token peekWhitespace() {
@@ -93,6 +92,13 @@ public class HjsonParser extends CommentedTokenParser {
                 break;
             }
         } while (this.readNextMember(object));
+        if (!object.isEmpty()) {
+            final JsonValue top = object.get(0);
+            if (top.getLinesAbove() == 0) {
+                // allow these to auto-format with other writers
+                top.setLinesAbove(-1);
+            }
+        }
         this.readBottom();
         return this.takeFormatting(object);
     }
@@ -111,7 +117,7 @@ public class HjsonParser extends CommentedTokenParser {
         } else if (this.current.isSymbol('[')) {
             return this.readArray();
         }
-        final JsonValue value = this.readUnquoted();
+        final JsonValue value = this.readSingle();
         this.read();
         return value;
     }
@@ -145,26 +151,24 @@ public class HjsonParser extends CommentedTokenParser {
     }
 
     protected String readKey() {
-        if (this.current instanceof SymbolToken) {
-            final char c = ((SymbolToken) this.current).symbol;
-            if (c == ':') {
-                throw this.emptyKey();
-            } else if (this.isPunctuationChar(c)) {
-                throw this.punctuationInKey(c);
+        final Token t = this.current;
+        final TokenType type = t.type();
+        if (this.isLegalKeyType(type)) {
+            final Token peek = this.peekWhitespace();
+            if (peek != null && this.isLegalKeyType(peek.type())) {
+                // purely to provide useful errors (hjson can be tricky)
+                throw this.whitespaceInKey();
             }
+            this.read();
+            return t.parsed();
+        } else if (t.isSymbol(':')) {
+            throw this.emptyKey();
+        } else if (t.hasText()) {
+            throw this.illegalToken(t.parsed());
+        } else if (t instanceof SymbolToken s) {
+            throw this.punctuationInKey(s.symbol);
         }
-        final String text;
-        if (this.current instanceof StringToken) {
-            text = this.current.parsed();
-        } else {
-            text = this.current.textOf(this.reference);
-        }
-        final Token peek = this.peekWhitespace();
-        if (peek != null && peek.type() != TokenType.SYMBOL) {
-            throw this.whitespaceInKey();
-        }
-        this.read();
-        return text;
+        throw this.illegalToken(type.name());
     }
 
     protected JsonArray readArray() {
@@ -210,51 +214,36 @@ public class HjsonParser extends CommentedTokenParser {
         return false;
     }
 
-    protected JsonValue readUnquoted() {
-        if (this.current instanceof NumberToken) {
-            final JsonValue full = this.checkAfterUnquoted();
-            if (full != null) {
-                return full;
-            }
-            return Json.value(((NumberToken) this.current).number);
-        } else if (this.current instanceof StringToken) {
-            return new JsonString(this.current.parsed(), this.current.stringType());
-        } else if (this.current instanceof SymbolToken) {
-            final char c = ((SymbolToken) this.current).symbol;
-            // Tokenizer only returns symbols for punctuation.
-            assert this.isPunctuationChar(c);
-            throw this.punctuationInValue(c);
+    protected JsonValue readSingle() {
+        final Token t = this.current;
+        if (t instanceof NumberToken n) {
+            return Json.value(n.number);
+        } else if (t instanceof StringToken s) {
+            return new JsonString(s.parsed(), s.stringType());
         }
-        final String text = this.current.textOf(this.reference);
+        if (!t.hasText()) {
+            // helpful errors (hjson can be tricky)
+            if (t.isSymbol(',')) {
+                throw this.leadingDelimiter();
+            } else if (t instanceof SymbolToken s) {
+                throw this.punctuationInValue(s.symbol);
+            } else if (this.isEndOfContainer()) {
+                throw this.endOfContainer();
+            }
+            throw this.unexpected(t.type().name());
+        }
+        final String text = t.parsed();
         return switch (text) {
             case "true" -> JsonLiteral.jsonTrue();
             case "false" -> JsonLiteral.jsonFalse();
             case "null" -> JsonLiteral.jsonNull();
-            default -> new JsonString(text);
+            case "" -> throw this.expected("tokens");
+            default -> throw this.illegalToken(text);
         };
     }
 
-    protected @Nullable JsonValue checkAfterUnquoted() {
-        final Token peek = this.iterator.peek();
-        if (peek == null) {
-            return null;
-        }
-        final TokenType type = peek.type();
-        if (type == TokenType.BREAK
-                || type == TokenType.COMMENT
-                || type == TokenType.SYMBOL) {
-            return null;
-        }
-        final int s = this.current.start();
-        if (this.skipTo(',', true, true) > 0) {
-            return new JsonString(
-                this.iterator.getText(s, this.current.end()));
-        }
-        return null;
-    }
-
-    protected boolean isPunctuationChar(final char c) {
-        return c == '{' || c == '}' || c == '[' || c == ']' || c == ',' || c == ':';
+    protected boolean isLegalKeyType(final TokenType type) {
+        return type == TokenType.STRING || type == TokenType.WORD || type == TokenType.NUMBER;
     }
 
     protected SyntaxException emptyKey() {
@@ -269,8 +258,16 @@ public class HjsonParser extends CommentedTokenParser {
         return this.unexpected("punctuation ('" + c + "') in key (use quotes to include)");
     }
 
+    protected SyntaxException leadingDelimiter() {
+        return this.unexpected("leading delimiter (use quotes to include): ','");
+    }
+
     protected SyntaxException punctuationInValue(final char c) {
         return this.unexpected("punctuation ('" + c + "') in value (use quotes to include)");
+    }
+
+    protected SyntaxException endOfContainer() {
+        return this.unexpected("end of container when expecting a value (use empty double quotes for empty string)");
     }
 
     @Override

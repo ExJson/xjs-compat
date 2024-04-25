@@ -2,19 +2,20 @@ package xjs.compat.serialization;
 
 import org.jetbrains.annotations.ApiStatus;
 import xjs.compat.serialization.parser.TxtParser;
-import xjs.serialization.JsonContext;
+import xjs.data.serialization.JsonContext;
 import xjs.compat.serialization.parser.HjsonParser;
-import xjs.serialization.parser.ParsingFunction;
+import xjs.data.serialization.parser.ParsingFunction;
 import xjs.compat.serialization.parser.UbjsonParser;
 import xjs.compat.serialization.writer.HjsonWriter;
 import xjs.compat.serialization.writer.TxtWriter;
 import xjs.compat.serialization.writer.UbjsonWriter;
-import xjs.serialization.writer.WritingFunction;
+import xjs.data.serialization.writer.WritingFunction;
 
 /**
  * Core utilities used by xjs-compat. For internal use only.
  */
 @ApiStatus.Internal
+@SuppressWarnings("unused") // reflective access
 public final class XjsCompat {
 
     private XjsCompat() {}

@@ -1,9 +1,9 @@
 package xjs.compat.serialization.parser;
 
 import org.jetbrains.annotations.NotNull;
-import xjs.core.JsonString;
-import xjs.core.JsonValue;
-import xjs.serialization.parser.ValueParser;
+import xjs.data.JsonString;
+import xjs.data.JsonValue;
+import xjs.data.serialization.parser.ValueParser;
 
 import java.io.File;
 import java.io.IOException;

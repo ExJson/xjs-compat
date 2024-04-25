@@ -1,8 +1,8 @@
 package xjs.compat.serialization.writer;
 
-import xjs.core.JsonFormat;
-import xjs.core.JsonValue;
-import xjs.serialization.writer.ValueWriter;
+import xjs.data.JsonFormat;
+import xjs.data.JsonValue;
+import xjs.data.serialization.writer.ValueWriter;
 
 import java.io.File;
 import java.io.FileWriter;

@@ -1,15 +1,18 @@
 package xjs.compat.serialization.token;
 
 import org.jetbrains.annotations.Nullable;
-import xjs.serialization.token.SymbolToken;
-import xjs.serialization.token.Token;
-import xjs.serialization.token.TokenType;
-import xjs.serialization.token.Tokenizer;
-import xjs.serialization.util.PositionTrackingReader;
+import xjs.compat.serialization.util.StringContext;
+import xjs.data.StringType;
+import xjs.data.serialization.token.NumberToken;
+import xjs.data.serialization.token.ParsedToken;
+import xjs.data.serialization.token.Token;
+import xjs.data.serialization.token.TokenStream;
+import xjs.data.serialization.token.TokenType;
+import xjs.data.serialization.token.Tokenizer;
+import xjs.data.serialization.util.PositionTrackingReader;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.BitSet;
 
 /**
  * Parses Hjson tokens as a subset of XJS tokens, treating Hjson keys
@@ -17,124 +20,212 @@ import java.util.BitSet;
  */
 public class HjsonTokenizer extends Tokenizer {
 
-    protected final BitSet arrays = new BitSet();
-
-    // The first token is ambiguous in Hjson.
-    protected boolean expectingValue = false;
-    protected boolean colonRead = false;
-    protected boolean top = true;
-    protected int level = 0;
+    protected final StringContext stringContext = new StringContext();
 
     /**
      * Begins parsing tokens when given a typically ongoing input.
      *
      * @param is Any source of character bytes.
+     * @param containerized Whether to generate containers on the fly.
      * @throws IOException If the reader fails to parse any initial bytes.
      */
-    public HjsonTokenizer(final InputStream is) throws IOException {
-        super(is);
+    public HjsonTokenizer(final InputStream is, final boolean containerized) throws IOException {
+        super(is, containerized);
     }
 
     /**
      * Begins parsing tokens when given a full text as the source.
      *
      * @param text The full text and source of tokens.
+     * @param containerized Whether to generate containers on the fly.
      */
-    public HjsonTokenizer(final String text) {
-        super(text);
+    public HjsonTokenizer(final String text, final boolean containerized) {
+        super(text, containerized);
     }
 
     /**
      * Begins parsing tokens from any other source.
      *
      * @param reader A reader providing characters and positional data.
+     * @param containerized Whether to generate containers on the fly.
      */
-    public HjsonTokenizer(final PositionTrackingReader reader) {
-        super(reader);
+    public HjsonTokenizer(final PositionTrackingReader reader, final boolean containerized) {
+        super(reader, containerized);
+    }
+
+    /**
+     * Generates a lazily-evaluated {@link TokenStream stream of
+     * tokens} from the input text.
+     *
+     * @param text The full reference and source of tokens.
+     * @return A new {@link TokenStream}.
+     */
+    public static TokenStream stream(final String text) {
+        return new TokenStream(new HjsonTokenizer(text, false), TokenType.OPEN);
+    }
+
+    /**
+     * Generates a lazily-evaluated {@link TokenStream stream of tokens}
+     * wrapping an {@link InputStream}.
+     *
+     * @param is The source of tokens being parsed.
+     * @return A new {@link TokenStream}.
+     * @throws IOException If the initial read operation throws an exception.
+     */
+    public static TokenStream stream(final InputStream is) throws IOException {
+        return new TokenStream(new HjsonTokenizer(is, false), TokenType.OPEN);
     }
 
     @Override
     protected @Nullable Token single() throws IOException {
-        final Token single = super.single();
-        if (single != null) {
-            this.updateContext(single);
+        final PositionTrackingReader reader = this.reader;
+        reader.skipLineWhitespace();
+        if (reader.isEndOfText()) {
+            return null;
         }
-        return single;
-    }
-
-    protected void updateContext(final Token t) {
-        if (t instanceof SymbolToken) {
-            final char symbol = ((SymbolToken) t).symbol;
-            if (symbol == '{') {
-                this.push(false);
-            } else if (symbol == '[') {
-                this.push(true);
-            } else if (symbol == '}' || symbol == ']') {
-                this.pop();
-            } else if (symbol == ':') {
-                this.colonRead = true;
+        final char c = (char) reader.current;
+        this.stringContext.prepare(c);
+        this.startReading();
+        final Token t;
+        switch (c) {
+            case '/', '#' -> t = this.comment(c);
+            case '\'', '"' -> t = this.quote(c);
+            case '\n' -> t = this.newLine();
+            default -> {
+                if (this.isPunctuation(c) || c == ':') {
+                    reader.read();
+                    t = this.newSymbolToken(c);
+                } else {
+                    t = this.word();
+                }
             }
-        } else if (t.type() != TokenType.BREAK && t.type() != TokenType.COMMENT) {
-            this.colonRead = false;
         }
-        this.top = false;
-    }
-
-    protected void push(final boolean array) {
-        this.arrays.set(++this.level, array);
-        this.expectingValue = array;
-        this.colonRead = array;
-    }
-
-    protected void pop() {
-        if (this.level == 0) {
-            this.expectingValue = false;
-            return;
-        }
-        final boolean flag = this.arrays.get(--this.level);
-        this.expectingValue = flag;
-        this.colonRead = flag;
+        this.stringContext.update(t);
+        return t;
     }
 
     @Override
-    protected Token word(final int i, final int l, final int o) throws IOException {
-        if (this.isReadingKey()) {
-            return key(i, l, o);
+    protected Token word() throws IOException {
+        if (this.stringContext.isExpectingKey()) {
+            return this.key();
+        } else if (this.stringContext.isAmbiguous()) {
+            return this.ambiguous();
         }
-        final char c = (char) reader.current;
-        if (this.isPunctuation(c)) {
-            reader.read();
-            return new SymbolToken(i, reader.index, l, o, c);
-        }
-        return unquoted(i, l, o);
+        return this.unquoted();
     }
 
-    protected boolean isReadingKey() {
-        return !this.expectingValue && !this.colonRead;
-    }
-
-    protected Token key(final int i, final int l, final int o) throws IOException {
-        char c = (char) reader.current;
-        if (c != '_' && !Character.isLetterOrDigit(c)) {
-            reader.read();
-            return new SymbolToken(i, reader.index, l, o, c);
-        }
-        do {
-            if (this.isLegalKeyCharacter(c)) {
-                reader.read();
-            } else if (reader.index - i == 0) {
-                reader.read();
-                return new SymbolToken(i, reader.index, l, o, c);
-            } else {
+    protected Token key() throws IOException {
+        final PositionTrackingReader reader = this.reader;
+        reader.startCapture();
+        do { // can safely assume first char is legal
+            final char c = (char) reader.current;
+            if (!this.isLegalKeyCharacter(c)) {
                 break;
             }
-            c = (char) reader.current;
+            reader.read();
         } while (!reader.isEndOfText());
+        return this.newWordToken(reader.endCapture());
+    }
 
-        if (this.top) {
-            return this.checkFirstOpenKey(i, l, o);
+    // best attempt at resolving key vs value without lookahead
+    // if the input is a valid kw or number, contains comment-like
+    // symbols or punctuation, and is followed by a colon or nl,
+    // we are not able to read it correctly as a key.
+    // for example, the following text in hjson is bizarrely a key:
+    //   true//:
+    protected Token ambiguous() throws IOException {
+        final PositionTrackingReader reader = this.reader;
+        reader.startCapture();
+
+        while (true) {
+            if (reader.isEndOfText()) {
+                final String prefix = reader.endCapture();
+                final Token t = this.asKwOrNum(prefix);
+                if (t != null) return t;
+                return this.newUnquoted(prefix);
+            } else if (reader.current == ':') {
+                return this.newUnquoted(reader.endCapture());
+            } else if (reader.isWhitespace()) {
+                final String prefix = reader.endCapture();
+                reader.startCapture();
+                reader.skipLineWhitespace();
+                if (reader.current == ':' || reader.current == '\n') {
+                    reader.invalidateCapture();
+                    return this.newUnquoted(prefix);
+                }
+                if (this.canBeEndOfKwOrNum()) {
+                    final Token t = this.asKwOrNum(prefix);
+                    if (t != null) return t;
+                }
+                final String remaining = reader.endCapture(reader.skipToNL());
+                return this.newUnquoted(prefix + remaining);
+            } else if (this.canBeEndOfKwOrNum()) {
+                final String prefix = reader.endCapture();
+                final Token t = this.asKwOrNum(prefix);
+                if (t != null) return t;
+                reader.startCapture();
+                final String remaining = reader.endCapture(reader.skipToNL());
+                return this.newUnquoted(prefix + remaining);
+            }
+            reader.read();
         }
-        return new Token(i, reader.index, l, o, TokenType.WORD);
+    }
+
+    protected Token unquoted() throws IOException {
+        final PositionTrackingReader reader = this.reader;
+        reader.startCapture();
+
+        while (!reader.isEndOfText()) {
+            if (reader.isWhitespace()) {
+                final String prefix = reader.endCapture();
+                reader.startCapture();
+                reader.skipLineWhitespace();
+                if (this.canBeEndOfKwOrNum()) {
+                    final Token t = this.asKwOrNum(prefix);
+                    if (t != null) return t;
+                }
+                final String remaining = reader.endCapture(reader.skipToNL());
+                return this.newUnquoted(prefix + remaining);
+            } else if (this.canBeEndOfKwOrNum()) {
+                // true, false, null, or number, then punctuation or comment -> end of value
+                final String prefix = reader.endCapture();
+                final Token t = this.asKwOrNum(prefix);
+                if (t != null) return t;
+                reader.startCapture();
+                final String remaining = reader.endCapture(reader.skipToNL());
+                return this.newUnquoted(prefix + remaining);
+            }
+            reader.read();
+        }
+        // hit end of text, no whitespace encountered
+        final String parsed = reader.endCapture();
+        final Token t = this.asKwOrNum(parsed);
+        if (t != null) return t;
+        return this.newUnquoted(parsed);
+    }
+
+    protected @Nullable Token asKwOrNum(final String text) {
+        switch (text) {
+            case "true", "false", "null" -> {
+                final int e = this.index + text.length();
+                return this.newWordToken(text, e);
+            }
+            default -> {
+                if (this.isOctalFormat(text)) {
+                    return null; // disallow octal format
+                }
+                try {
+                    final double n = Double.parseDouble(text);
+                    final int e = this.index + text.length();
+                    return this.newNumberToken(text, n, e);
+                } catch (final NumberFormatException ignored) {}
+                return null;
+            }
+        }
+    }
+
+    protected boolean isOctalFormat(final String text) {
+        return text.length() > 1 && text.charAt(0) == '0' && Character.isDigit(text.charAt(1));
     }
 
     protected boolean isLegalKeyCharacter(final char c) {
@@ -149,23 +240,26 @@ public class HjsonTokenizer extends Tokenizer {
         return c == ',' || c == '{' || c == '}' || c == '[' || c == ']';
     }
 
-    protected Token checkFirstOpenKey(final int i, final int l, final int o) throws IOException {
-        final int e = reader.index;
-        reader.skipLineWhitespace();
-        if (reader.current == ':' || reader.current == '\n') {
-            return new Token(i, e, l, o, TokenType.WORD);
+    protected boolean canBeEndOfKwOrNum() throws IOException {
+        final char c = (char) this.reader.current;
+        if (c == '\n' || c == ',' || c == '}' || c == ']' || c == '#') {
+            return true;
+        } else if (c == '/') {
+            final int peek = this.reader.peek();
+            return peek == '/' || peek == '*';
         }
-        return unquoted(i, l, o);
+        return false;
     }
 
-    protected Token unquoted(final int i, final int l, final int o) throws IOException {
-        final char c = (char) reader.current;
-        if (this.isPunctuation(c)) {
-            reader.read();
-            return new SymbolToken(i, i + 1, l, o, c);
-        }
-        final int last = reader.skipToNL();
-        final int e = Math.min(last + 1, reader.getFullText().length());
-        return new Token(i, e, l, o, TokenType.WORD);
+    protected Token newUnquoted(final String text) {
+        return this.newStringToken(text, StringType.IMPLICIT);
+    }
+    
+    protected Token newNumberToken(final String text, final double number, final int e) {
+        return new NumberToken(this.index, e, this.line, this.column, number, text);
+    }
+
+    protected Token newWordToken(final String capture, final int e) {
+        return new ParsedToken(this.index, e, this.line, this.column, TokenType.WORD, capture);
     }
 }

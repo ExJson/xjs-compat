@@ -1,8 +1,13 @@
 package xjs.compat.serialization.parser;
 
 import org.jetbrains.annotations.NotNull;
-import xjs.core.*;
-import xjs.serialization.parser.ValueParser;
+import xjs.data.Json;
+import xjs.data.JsonArray;
+import xjs.data.JsonLiteral;
+import xjs.data.JsonObject;
+import xjs.data.JsonReference;
+import xjs.data.JsonValue;
+import xjs.data.serialization.parser.ValueParser;
 import xjs.compat.serialization.util.UBMarker;
 
 import java.io.*;

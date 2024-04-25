@@ -1,12 +1,12 @@
 package xjs.compat.serialization.writer;
 
-import xjs.comments.CommentType;
-import xjs.core.JsonContainer;
-import xjs.core.JsonValue;
-import xjs.core.JsonReference;
-import xjs.core.StringType;
-import xjs.serialization.writer.JsonWriterOptions;
-import xjs.serialization.writer.XjsWriter;
+import xjs.data.comments.CommentType;
+import xjs.data.JsonContainer;
+import xjs.data.JsonValue;
+import xjs.data.JsonReference;
+import xjs.data.StringType;
+import xjs.data.serialization.writer.JsonWriterOptions;
+import xjs.data.serialization.writer.DjsWriter;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,7 +15,7 @@ import java.io.Writer;
 /**
  * A writer providing compatibility with Hjson files.
  */
-public class HjsonWriter extends XjsWriter {
+public class HjsonWriter extends DjsWriter {
 
     public HjsonWriter(final File file, final boolean format) throws IOException {
         super(file, format);

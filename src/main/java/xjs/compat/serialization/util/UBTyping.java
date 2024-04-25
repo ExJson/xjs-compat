@@ -1,6 +1,6 @@
 package xjs.compat.serialization.util;
 
-import xjs.core.JsonValue;
+import xjs.data.JsonValue;
 
 /**
  * The level of typing to automatically resolve when

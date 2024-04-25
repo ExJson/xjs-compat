@@ -3,11 +3,12 @@ package xjs.compat.serialization.parser;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import xjs.comments.CommentType;
-import xjs.core.JsonObject;
-import xjs.core.JsonValue;
-import xjs.exception.SyntaxException;
-import xjs.serialization.writer.JsonWriter;
+import xjs.compat.serialization.token.HjsonTokenizer;
+import xjs.data.comments.CommentType;
+import xjs.data.JsonObject;
+import xjs.data.JsonValue;
+import xjs.data.exception.SyntaxException;
+import xjs.data.serialization.writer.JsonWriter;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -26,6 +27,7 @@ public final class HjsonParserTest extends CommonParserTest {
     @ParameterizedTest
     @CsvSource({"1", "true", "\"string\""})
     public void parse_readsAfterNumber_asUnquotedString(final String next) {
+        HjsonTokenizer.stream("1 " + next).readToEnd();
         assertEquals("1 " + next, this.parse("1 " + next).asString());
     }
 
@@ -53,9 +55,9 @@ public final class HjsonParserTest extends CommonParserTest {
     }
 
     @Test
-    public void parse_noValueForLastKey_isEmptyString() {
-        assertTrue(new JsonObject().add("k", "")
-            .matches(this.parse("k:")));
+    public void parse_doesNotTolerate_missingValue() {
+        assertThrows(SyntaxException.class,
+            () -> this.parse("k:"));
     }
 
     @Test
@@ -249,6 +251,7 @@ public final class HjsonParserTest extends CommonParserTest {
              
                "finally": "value"
              }""";
+        HjsonTokenizer.stream(json).readToEnd();
         final StringWriter sw = new StringWriter();
         final JsonWriter writer = new JsonWriter(sw, true);
         writer.write(this.parse(json));

@@ -1,12 +1,12 @@
 package xjs.compat.serialization.writer;
 
-import xjs.core.JsonArray;
-import xjs.core.JsonContainer;
-import xjs.core.JsonObject;
-import xjs.core.JsonValue;
+import xjs.data.JsonArray;
+import xjs.data.JsonContainer;
+import xjs.data.JsonObject;
+import xjs.data.JsonValue;
 import xjs.compat.serialization.util.UBMarker;
 import xjs.compat.serialization.util.UBTyping;
-import xjs.serialization.writer.ValueWriter;
+import xjs.data.serialization.writer.ValueWriter;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;

@@ -1,10 +1,10 @@
 package xjs.compat.serialization.parser;
 
 import org.junit.jupiter.api.Test;
-import xjs.core.JsonArray;
-import xjs.core.JsonObject;
-import xjs.core.JsonValue;
-import xjs.exception.SyntaxException;
+import xjs.data.JsonArray;
+import xjs.data.JsonObject;
+import xjs.data.JsonValue;
+import xjs.data.exception.SyntaxException;
 
 import java.io.IOException;
 import java.util.List;
