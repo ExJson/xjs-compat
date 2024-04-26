@@ -62,7 +62,7 @@ public class PerformanceTest {
         LocalBenchmarkRunner.runIfEnabled();
     }
 
-    @Enabled(false)
+    @Enabled(true)
     @Benchmark
     @Fork(2)
     @Threads(4)
@@ -84,7 +84,7 @@ public class PerformanceTest {
         return sw.toString();
     }
 
-    @Enabled(true)
+    @Enabled(false)
     @Benchmark
     @Fork(2)
     @Threads(4)
@@ -95,7 +95,7 @@ public class PerformanceTest {
         return new UbjsonParser(is).parse();
     }
 
-    @Enabled(true)
+    @Enabled(false)
     @Benchmark
     @Fork(2)
     @Threads(4)

@@ -305,7 +305,7 @@ public class HjsonTokenizerTest {
 
     @Test
     public void stream_returnsLazilyEvaluatedTokens() {
-        final TokenStream stream = HjsonTokenizer.stream("1234");
+        final TokenStream stream = HjsonTokenizer.stream("1234").preserveOutput();
         stream.iterator().next();
         assertEquals(1, stream.viewTokens().size());
     }
@@ -319,7 +319,7 @@ public class HjsonTokenizerTest {
     }
 
     private static Token all(final String reference) {
-        return HjsonTokenizer.stream(reference).readToEnd();
+        return HjsonTokenizer.stream(reference).preserveOutput().readToEnd();
     }
 
     private static Token token(final String reference, final TokenType type) {

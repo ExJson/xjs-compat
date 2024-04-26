@@ -27,7 +27,6 @@ public final class HjsonParserTest extends CommonParserTest {
     @ParameterizedTest
     @CsvSource({"1", "true", "\"string\""})
     public void parse_readsAfterNumber_asUnquotedString(final String next) {
-        HjsonTokenizer.stream("1 " + next).readToEnd();
         assertEquals("1 " + next, this.parse("1 " + next).asString());
     }
 
