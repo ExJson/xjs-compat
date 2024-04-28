@@ -62,14 +62,18 @@ public class PerformanceTest {
         LocalBenchmarkRunner.runIfEnabled();
     }
 
-    @Enabled(true)
+    @Enabled(false)
     @Benchmark
     @Fork(2)
     @Threads(4)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public JsonValue hjsonParsingSample() {
-        return new HjsonParser(SIMPLE_HJSON_SAMPLE).parse();
+        try (final HjsonParser parser = new HjsonParser(SIMPLE_HJSON_SAMPLE)) {
+            return parser.parse();
+        } catch (final IOException ignored) {
+            throw new AssertionError("unreachable");
+        }
     }
 
     @Enabled(false)
@@ -78,10 +82,29 @@ public class PerformanceTest {
     @Threads(4)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public String hjsonWritingSample() throws IOException {
-        final StringWriter sw = new StringWriter();
-        new HjsonWriter(sw, true).write(WRITING_SAMPLE);
-        return sw.toString();
+    public String hjsonWritingSample() {
+        try (final StringWriter sw = new StringWriter();
+                final HjsonWriter writer = new HjsonWriter(sw, true)) {
+            writer.write(WRITING_SAMPLE);
+            return sw.toString();
+        } catch (final IOException ignored) {
+            throw new AssertionError("unreachable");
+        }
+    }
+
+    @Enabled(true)
+    @Benchmark
+    @Fork(2)
+    @Threads(4)
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public JsonValue ubjsonParsingSample() {
+        try (final InputStream is = new ByteArrayInputStream(SIMPLE_UBJSON_SAMPLE);
+                final UbjsonParser parser = new UbjsonParser(is)) {
+            return parser.parse();
+        } catch (final IOException ignored) {
+            throw new AssertionError("unreachable");
+        }
     }
 
     @Enabled(false)
@@ -90,20 +113,13 @@ public class PerformanceTest {
     @Threads(4)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public JsonValue ubjsonParsingSample() throws IOException {
-        final InputStream is = new ByteArrayInputStream(SIMPLE_UBJSON_SAMPLE);
-        return new UbjsonParser(is).parse();
-    }
-
-    @Enabled(false)
-    @Benchmark
-    @Fork(2)
-    @Threads(4)
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public byte[] ubjsonWritingSample() throws IOException {
-        final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new UbjsonWriter(out, UBTyping.BALANCED).write(WRITING_SAMPLE);
-        return out.toByteArray();
+    public byte[] ubjsonWritingSample() {
+        try (final ByteArrayOutputStream out = new ByteArrayOutputStream();
+                final UbjsonWriter writer = new UbjsonWriter(out, UBTyping.BALANCED)) {
+            writer.write(WRITING_SAMPLE);
+            return out.toByteArray();
+        } catch (final IOException ignored) {
+            throw new AssertionError("unreachable");
+        }
     }
 }
