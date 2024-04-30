@@ -402,7 +402,7 @@ public class UbjsonWriter implements ValueWriter {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
         this.output.close();
     }
 }
