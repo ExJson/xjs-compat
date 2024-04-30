@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -138,6 +139,25 @@ public final class HjsonParserTest extends CommonParserTest {
               '''
             """;
         assertEquals("0\n 1\n  2", this.parse(text).asObject().getAsserted("multi").asString());
+    }
+
+    @Test
+    public void multilineString_cannotBeAKey() {
+        final String text = """
+            {
+              '''
+              key
+              ''':
+                value
+            }""";
+        assertThrows(SyntaxException.class, () -> this.parse(text));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"/", "."})
+    public void nonPunctuationSymbols_areLegalInKey(final String symbol) {
+        final String text = symbol + ": value";
+        assertNotNull(this.parse(text).asObject().get(symbol));
     }
 
     @ParameterizedTest

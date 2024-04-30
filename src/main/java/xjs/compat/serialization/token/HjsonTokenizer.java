@@ -105,6 +105,21 @@ public class HjsonTokenizer extends Tokenizer {
     }
 
     @Override
+    protected Token comment(final char c) throws IOException {
+        final PositionTrackingReader reader = this.reader;
+        if (c == '#') {
+            return reader.readHashComment();
+        } else if (reader.peek() == '/') {
+            reader.read();
+            return reader.readLineComment();
+        } else if (reader.peek() == '*') {
+            reader.read();
+            return reader.readBlockComment();
+        }
+        return this.word();
+    }
+
+    @Override
     protected Token word() throws IOException {
         if (this.stringContext.isExpectingKey()) {
             return this.key();

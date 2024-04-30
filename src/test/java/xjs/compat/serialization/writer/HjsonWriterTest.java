@@ -313,6 +313,14 @@ public final class HjsonWriterTest {
 
     @Test
     public void write_printsEolComment() {
+        final JsonValue v = Json.value(1234);
+        v.setComment(CommentType.EOL, CommentStyle.LINE_DOC, "Eol");
+
+        assertEquals("1234 /// Eol", write(v));
+    }
+
+    @Test
+    public void write_reformatsEolComment_afterUnquotedString() {
         final JsonValue v = new JsonString("v", StringType.IMPLICIT);
         v.setComment(CommentType.EOL, CommentStyle.LINE_DOC, "Eol");
 
