@@ -5,13 +5,11 @@ import xjs.data.StringType;
 import xjs.data.exception.SyntaxException;
 import xjs.data.serialization.parser.DjsParser;
 import xjs.data.serialization.token.StringToken;
-import xjs.data.serialization.token.SymbolToken;
-import xjs.data.serialization.token.Token;
 import xjs.data.serialization.token.TokenStream;
-import xjs.data.serialization.token.TokenType;
+import xjs.data.serialization.util.PositionTrackingReader;
 
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 
 /**
@@ -20,11 +18,15 @@ import java.io.IOException;
 public class HjsonParser extends DjsParser {
 
     public HjsonParser(final File file) throws IOException {
-        super(HjsonTokenizer.stream(new FileInputStream(file)));
+        this(PositionTrackingReader.fromReader(new FileReader(file)));
     }
 
     public HjsonParser(final String text) {
-        super(HjsonTokenizer.stream(text));
+        this(PositionTrackingReader.fromString(text));
+    }
+
+    public HjsonParser(final PositionTrackingReader reader) {
+        this(HjsonTokenizer.stream(reader));
     }
 
     public HjsonParser(final TokenStream root) {

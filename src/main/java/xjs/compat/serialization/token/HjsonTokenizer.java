@@ -57,23 +57,11 @@ public class HjsonTokenizer extends Tokenizer {
      * Generates a lazily-evaluated {@link TokenStream stream of
      * tokens} from the input text.
      *
-     * @param text The full reference and source of tokens.
+     * @param reader The source of tokens being parsed
      * @return A new {@link TokenStream}.
      */
-    public static TokenStream stream(final String text) {
-        return new TokenStream(new HjsonTokenizer(text, false), TokenType.OPEN);
-    }
-
-    /**
-     * Generates a lazily-evaluated {@link TokenStream stream of tokens}
-     * wrapping an {@link InputStream}.
-     *
-     * @param is The source of tokens being parsed.
-     * @return A new {@link TokenStream}.
-     * @throws IOException If the initial read operation throws an exception.
-     */
-    public static TokenStream stream(final InputStream is) throws IOException {
-        return new TokenStream(new HjsonTokenizer(is, false), TokenType.OPEN);
+    public static TokenStream stream(final PositionTrackingReader reader) {
+        return new TokenStream(new HjsonTokenizer(reader, false), TokenType.OPEN);
     }
 
     @Override

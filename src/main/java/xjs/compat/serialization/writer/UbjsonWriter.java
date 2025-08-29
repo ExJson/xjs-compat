@@ -1,5 +1,6 @@
 package xjs.compat.serialization.writer;
 
+import xjs.compat.serialization.XjsCompat;
 import xjs.data.JsonArray;
 import xjs.data.JsonContainer;
 import xjs.data.JsonObject;
@@ -25,11 +26,15 @@ public class UbjsonWriter implements ValueWriter {
     protected final UBTyping typing;
 
     public UbjsonWriter(final File file) throws IOException {
-        this(new FileOutputStream(file), UBTyping.COMPRESSED);
+        this(new FileOutputStream(file), XjsCompat.getDefaultUbTyping());
     }
 
     public UbjsonWriter(final File file, final UBTyping typing) throws IOException {
         this(new FileOutputStream(file), typing);
+    }
+
+    public UbjsonWriter(final OutputStream output) {
+        this(output, XjsCompat.getDefaultUbTyping());
     }
 
     public UbjsonWriter(final OutputStream output, final UBTyping typing) {

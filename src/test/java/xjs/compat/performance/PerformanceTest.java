@@ -87,7 +87,7 @@ public class PerformanceTest {
                 final HjsonWriter writer = new HjsonWriter(sw, true)) {
             writer.write(WRITING_SAMPLE);
             return sw.toString();
-        } catch (final IOException ignored) {
+        } catch (final Exception ignored) {
             throw new AssertionError("unreachable");
         }
     }
